@@ -22,6 +22,8 @@
     <remap from="conductor/remote_gateway_info" to="gateway/remote_gateway_info"/>
     <remap from="conductor/pull" to="gateway/pull"/>
     <remap from="conductor/flip" to="gateway/flip"/>
-    <rosparam command="load" file="$(find concert_conductor)/param/default.yaml"/>
+    <rosparam>
+        auto_invite: false
+    </rosparam>
   </node>
 </launch>
