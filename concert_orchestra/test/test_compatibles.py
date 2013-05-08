@@ -17,13 +17,13 @@ import rocon_utilities.console as console
 # Apps
 ##############################################################################
 
-app_listener = rocon_app_manager_msgs.AppDescription(
+app_listener = rocon_app_manager_msgs.App(
                    name='rocon_apps/listener',
                    display='Listener',
                    description='Default ros style listener tutorial',
                    platform='linux.ros.*'
                    )
-app_talker = rocon_app_manager_msgs.AppDescription(
+app_talker = rocon_app_manager_msgs.App(
                    name='rocon_apps/talker',
                    display='Talker',
                    description='Default ros style talker tutorial',
