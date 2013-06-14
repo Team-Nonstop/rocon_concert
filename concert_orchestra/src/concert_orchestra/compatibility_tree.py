@@ -281,15 +281,19 @@ class CompatibilityTree(object):
 
     def is_valid(self):
         leaves = []
+        self.print_branches()
         for branch in self.branches:
             # Check min, max.
             if len(branch.leaves) < branch.minimum_leaves:
+                print(str(branch) + " does not meet minimum requirement. (" + str(len(branch.leaves)) + " < " +  str(branch.minimum_leaves) + ")")
                 return False
             if  branch.maximum_leaves != concert_msgs.LinkNode.UNLIMITED_RESOURCE and len(branch.leaves) > branch.maximum_leaves:
+                print("Over the maximum requirements")
                 return False
             # Check for more than 1 occurrence of a leaf
             for leaf in branch.leaves:
                 if leaf in leaves:
+                    print(str(leaf) + " fails")
                     return False
                 else:
                     leaves.append(leaf)
