@@ -8,6 +8,8 @@
 ##############################################################################
 
 import rospy
+import utils
+import exceptions
 import concert_msgs.msg as concert_msgs
 import concert_msgs.srv as concert_srvs
 
@@ -52,5 +54,10 @@ class CareerCenter(object):
     def spin(self):
         rospy.loginfo("In spin")
         rospy.loginfo(str(self._param['services']))
+
+        for service in self._param['services']:
+            s = utils.find_resource(service)
+            rospy.loginfo(str(s))
+        
         rospy.spin()
 
