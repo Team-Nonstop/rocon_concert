@@ -1,6 +1,6 @@
 <launch>
     <include file="$(find concert_conductor)/launch/conductor.launch">
-        <arg name="concert_name" value="multijob"/>
+        <arg name="concert_name" value="multiservice_concert"/>
         <arg name="concert_auto_invite" value="false"/>
     </include>
     <node pkg="concert_careercenter" name="careercenter" type="center.py" output="screen">

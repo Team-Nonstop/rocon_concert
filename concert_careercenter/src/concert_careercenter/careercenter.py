@@ -42,7 +42,8 @@ class CareerCenter(object):
         self._param['services']         = rospy.get_param("~services",[])
 
     def process_list_concert_clients(self,msg):
-        rospy.loginfo("hello concert")
+        for client in msg.clients:
+            rospy.loginfo(client.name)
 
     def process_add_service(self,req):
         return AddServiceResponse()
