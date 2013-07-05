@@ -84,57 +84,17 @@ class Conductor(object):
         '''
         master = xmlrpclib.ServerProxy(os.environ['ROS_MASTER_URI'])
         while not rospy.is_shutdown():
-            gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
-            local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
-            visible_clients = gateway_clients + local_clients
-            number_of_pruned_clients = self._prune_client_list(visible_clients)
-            number_of_new_clients = 0
-            new_clients = [c for c in visible_clients if (c not in [client.gateway_name for client in self._concert_clients.values()])
-                                                     and (c not in self._bad_clients)]
-            # Create new clients info instance
-            for gateway_hash_name in new_clients:
-                is_local_client = True if gateway_hash_name in local_clients and gateway_hash_name not in visible_clients else False
-                gateway_name = rocon_utilities.gateway_basename(gateway_hash_name)
-                try:
-                    # remove the 16 byte hex hash from the name
-                    same_name_count = 0
-                    human_friendly_indices = set([])
-                    for client in self._concert_clients.values():
-                        if gateway_name == rocon_utilities.gateway_basename(client.gateway_name):
-                            index = client.name.replace(gateway_name, "")
-                            if index == "":
-                                human_friendly_indices.add("0")
-                            else:
-                                human_friendly_indices.add(index)
-                            same_name_count += 1
-                    if same_name_count == 0:
-                        concert_name = gateway_name
-                    else:
-                        human_friendly_index = -1
-                        while True:
-                            human_friendly_index += 1
-                            if not str(human_friendly_index) in human_friendly_indices:
-                                break
-                        concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
-                    self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=is_local_client)
-                    rospy.loginfo("Conductor : new client found [%s]" % concert_name)
-                    number_of_new_clients += 1
 
-                    # re-invitation of clients that disappeared and came back
-                    if concert_name in self._invited_clients:
-                        self.invite(self._concert_name, [concert_name], True)
-                except Exception as e:
-                    self._bad_clients.append(gateway_name)
-                    rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
+            local_clients, visible_clients  = self._get_client_lists(master)
+            number_of_new_clients           = self._discover_new_clients(local_clients,visible_clients)
 
             if self._param['config']['auto_invite']:
-                client_list = [client for client in self._concert_clients
-                                     if (client not in self._invited_clients)
-                                     or (client in self._invited_clients and self._invited_clients[client] == False)]
-                self.invite(self._concert_name, client_list, True)
+                self._invite_all_clients()
+
             # Continually publish so it goes to web apps for now (inefficient).
             self._publish_discovered_concert_clients(self.publishers["spammy_list_concert_clients"])
             # Long term solution
+            number_of_pruned_clients = self._prune_client_list(visible_clients)
             if number_of_pruned_clients != 0 or number_of_new_clients != 0:
                 self._publish_discovered_concert_clients()
             rospy.sleep(self._watcher_period)
@@ -154,6 +114,68 @@ class Conductor(object):
     ###########################################################################
     # Helpers
     ###########################################################################
+
+    def _get_client_lists(self,master):
+        gateway_clients = self._get_gateway_clients()  # list of clients identified by gateway hash names
+        local_clients = [client for client in self._get_local_clients(master) if client not in gateway_clients]
+        visible_clients = gateway_clients + local_clients
+
+        return local_clients, visible_clients
+
+
+    def _discover_new_clients(self,local_clients,visible_clients):
+        number_of_new_clients = 0
+        new_clients = [c for c in visible_clients if (c not in [client.gateway_name for client in self._concert_clients.values()])
+                                                 and (c not in self._bad_clients)]
+        # Create new clients info instance
+        for gateway_hash_name in new_clients:
+            is_local_client = True if gateway_hash_name in local_clients and gateway_hash_name not in visible_clients else False
+            gateway_name = rocon_utilities.gateway_basename(gateway_hash_name)
+            try:
+                # remove the 16 byte hex hash from the name
+                same_name_count = 0
+                human_friendly_indices = set([])
+                for client in self._concert_clients.values():
+                    if gateway_name == rocon_utilities.gateway_basename(client.gateway_name):
+                        index = client.name.replace(gateway_name, "")
+                        if index == "":
+                            human_friendly_indices.add("0")
+                        else:
+                            human_friendly_indices.add(index)
+                        same_name_count += 1
+                if same_name_count == 0:
+                    concert_name = gateway_name
+                else:
+                    human_friendly_index = -1
+                    while True:
+                        human_friendly_index += 1
+                        if not str(human_friendly_index) in human_friendly_indices:
+                            break
+                    concert_name = gateway_name if human_friendly_index == 0 else gateway_name + str(human_friendly_index)
+                self._concert_clients[concert_name] = ConcertClient(concert_name, gateway_hash_name, is_local_client=is_local_client)
+                rospy.loginfo("Conductor : new client found [%s]" % concert_name)
+                number_of_new_clients += 1
+                                                                                                                                      
+                # re-invitation of clients that disappeared and came back
+                if concert_name in self._invited_clients:
+                    self.invite(self._concert_name, [concert_name], True)
+            except Exception as e:
+                self._bad_clients.append(gateway_name)
+                rospy.loginfo("Conductor : failed to establish client [%s][%s][%s]" % (str(gateway_hash_name), str(e), type(e)))
+
+        return number_of_new_clients
+
+    def _invite_all_clients(self):
+        '''
+          This invites any valid visible clients into concert. 
+        '''
+        client_list = [client for client in self._concert_clients
+                             if (client not in self._invited_clients)
+                             or (client in self._invited_clients and self._invited_clients[client] == False)]
+        self.invite(self._concert_name, client_list, True)
+
+
+
 
     def _get_local_clients(self, master):
         '''
