@@ -1,4 +1,5 @@
 <launch>
+  <group ns="concert">
     <include file="$(find concert_conductor)/launch/conductor.launch">
         <arg name="concert_name" value="multiservice_concert"/>
         <arg name="concert_auto_invite" value="false"/>
@@ -6,4 +7,5 @@
     <node pkg="concert_careercenter" name="careercenter" type="center.py" output="screen">
         <rosparam file="$(find multiservice_concert)/solution/multiservice.solution" command="load"/>
     </node>
+  </group>
 </launch>

@@ -43,7 +43,7 @@ class CareerCenter(object):
 
     def process_list_concert_clients(self,msg):
         for client in msg.clients:
-            rospy.loginfo(client.name)
+            self.log(str(client.name))
 
     def process_add_service(self,req):
         return AddServiceResponse()
@@ -51,14 +51,16 @@ class CareerCenter(object):
     def process_remove_service(self,req):
         return RemoveServiceResponse()
 
+    def log(sef,msg):
+        rospy.loginfo("CareerCenter : " + str(msg))
 
     def spin(self):
-        rospy.loginfo("In spin")
-        rospy.loginfo(str(self._param['services']))
+        self.log("In spin")
+        self.log(str(self._param['services']))
 
         for service in self._param['services']:
             s = utils.find_resource(service)
-            rospy.loginfo(str(s))
+            self.log(str(s))
         
         rospy.spin()
 
